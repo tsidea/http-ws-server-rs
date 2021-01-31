@@ -57,15 +57,15 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
         },
         ("/ws_echo", false) => {
             //handle the case where the url is /ws_echo, but does not have an Upgrade field
-            Ok(Response::new(Body::from(format!("Getting even warmer, try connecting to this url using a websocket client."))))
+            Ok(Response::new(Body::from(format!("Getting even warmer, try connecting to this url using a websocket client.\n"))))
         },
         (url@_, false) => {
             //handle any other url without an Upgrade header field
-            Ok(Response::new(Body::from(format!("This {} url doesn't do much, try to access the /ws_echo url.", url))))
+            Ok(Response::new(Body::from(format!("This {} url doesn't do much, try to access the /ws_echo url.\n", url))))
         },
         (_, true) => {
             //handle any other url with an Upgrade header field
-            Ok(Response::new(Body::from(format!("Getting warmer, but I'm only letting you connect via websocket over on /ws_echo, try that url"))))
+            Ok(Response::new(Body::from(format!("Getting warmer, but I'm only letting you connect via websocket over on /ws_echo, try that url.\n"))))
         }
     }
 }
