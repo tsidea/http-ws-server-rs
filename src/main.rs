@@ -81,7 +81,7 @@ async fn main() {
 
     // A `Service` is needed for every connection, so this
     // creates one from our `handle_request` function.
-    let make_svc = make_service_fn(move |conn: & AddrStream| {
+    let make_svc = make_service_fn(|conn: & AddrStream| {
         let remote_addr = conn.remote_addr();
         async move {
             // service_fn converts our function into a `Service`
