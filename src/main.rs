@@ -61,7 +61,7 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
         },
         (url@_, false) => {
             //handle any other url without an Upgrade header field
-            Ok(Response::new(Body::from(format!("This {} url doesn't do much, try to access the /ws_echo url.\n", url))))
+            Ok(Response::new(Body::from(format!("This {} url doesn't do much, try accessing the /ws_echo url instead.\n", url))))
         },
         (_, true) => {
             //handle any other url with an Upgrade header field
