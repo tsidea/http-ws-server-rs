@@ -3,7 +3,7 @@ use std::net::SocketAddr;
 use hyper::{header, upgrade, StatusCode, Body, Request, Response, Server, server::conn::AddrStream};
 use hyper::service::{make_service_fn, service_fn};
 use tokio_tungstenite::WebSocketStream;
-use tungstenite::Error;
+use tungstenite::{handshake, Error};
 use futures::stream::StreamExt;
 
 async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> Result<Response<Body>, Infallible> {
@@ -12,9 +12,11 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
         ("/ws_echo", true) => {
         
             //assume request is a handshake, so create the handshake response
-            let response = match tungstenite::handshake::server::create_response_with_body(&request, || Body::empty()) {
+            let response = 
+            match handshake::server::create_response_with_body(&request, || Body::empty()) {
                 Ok(response) => {
-                    //in case the handshake response creation succeeds, spawn a task to handle the websocket connection
+                    //in case the handshake response creation succeeds,
+                    //spawn a task to handle the websocket connection
                     tokio::spawn(async move {
                         //using the hyper feature of upgrading a connection
                         match upgrade::on(&mut request).await {
@@ -22,7 +24,8 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
                             Ok(upgraded) => {
                                 //create a websocket stream from the upgraded object
                                 let ws_stream = WebSocketStream::from_raw_socket(
-                                    //pass the upgraded object as the base layer stream of the Websocket
+                                    //pass the upgraded object
+                                    //as the base layer stream of the Websocket
                                     upgraded,
                                     tokio_tungstenite::tungstenite::protocol::Role::Server,
                                     None,
@@ -34,11 +37,18 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
                                 //forward the stream to the sink to achieve echo
                                 match ws_read.forward(ws_write).await {
                                     Ok(_) => {},
-                                    Err(Error::ConnectionClosed) => println!("Connection closed normally"),
-                                    Err(e) => println!("error creating echo stream on connection from address {}. Error is {}", remote_addr, e),
+                                    Err(Error::ConnectionClosed) => 
+                                        println!("Connection closed normally"),
+                                    Err(e) => 
+                                        println!("error creating echo stream on \
+                                                    connection from address {}. \
+                                                    Error is {}", remote_addr, e),
                                 };
                             },
-                            Err(e) => println!("error when trying to upgrade connection from address {} to websocket connection. Error is: {}", remote_addr, e),
+                            Err(e) =>
+                                println!("error when trying to upgrade connection \
+                                        from address {} to websocket connection. \
+                                        Error is: {}", remote_addr, e),
                         }
                     });
                     //return the response to the handshake request
@@ -46,7 +56,9 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
                 },
                 Err(error) => {
                     //probably the handshake request is not up to spec for websocket
-                    println!("Failed to create websocket response to request from address {}. Error is: {}", remote_addr, error);
+                    println!("Failed to create websocket response \
+                                to request from address {}. \
+                                Error is: {}", remote_addr, error);
                     let mut res = Response::new(Body::from(format!("Failed to create websocket: {}", error)));
                     *res.status_mut() = StatusCode::BAD_REQUEST;
                     return Ok(res);
@@ -57,15 +69,22 @@ async fn handle_request(mut request: Request<Body>, remote_addr: SocketAddr) -> 
         },
         ("/ws_echo", false) => {
             //handle the case where the url is /ws_echo, but does not have an Upgrade field
-            Ok(Response::new(Body::from(format!("Getting even warmer, try connecting to this url using a websocket client.\n"))))
+            Ok(Response::new(Body::from(format!("Getting even warmer, \
+                                                try connecting to this url \
+                                                using a websocket client.\n"))))
         },
         (url@_, false) => {
             //handle any other url without an Upgrade header field
-            Ok(Response::new(Body::from(format!("This {} url doesn't do much, try accessing the /ws_echo url instead.\n", url))))
+            Ok(Response::new(Body::from(format!("This {} url doesn't do \
+                                                much, try accessing the \
+                                                /ws_echo url instead.\n", url))))
         },
         (_, true) => {
             //handle any other url with an Upgrade header field
-            Ok(Response::new(Body::from(format!("Getting warmer, but I'm only letting you connect via websocket over on /ws_echo, try that url.\n"))))
+            Ok(Response::new(Body::from(format!("Getting warmer, but I'm \
+                                                only letting you connect \
+                                                via websocket over on \
+                                                /ws_echo, try that url.\n"))))
         }
     }
 }
